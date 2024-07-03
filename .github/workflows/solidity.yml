@@ -4,3 +4,4 @@ name: Test workflow
 jobs:
   call-workflow:
     uses: pthakur-circle/integrate-repo/.github/workflows/olympix.yml@main
+    secrets: inherit
