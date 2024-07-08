@@ -31,6 +31,6 @@ jobs:
 
   run_olympix: 
     needs: get_secrets 
-    uses: circlefin/security-seceng-templates/.github/workflows/olympix_scan.yml@master
+    uses: circlefin/security-seceng-templates/.github/workflows/olympix_scan.yml@v1
     secrets: 
       OLYMPIX_API_TOKEN: ${{ needs.get_secrets.outputs.API_TOKEN }}
