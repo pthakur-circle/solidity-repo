@@ -47,4 +47,4 @@ on:
 
 jobs:
   call-workflow:
-    uses: pthakur-circle/integrate-repo/.github/workflows/olympix.yml@main
+    uses: pthakur-circle/integrate-repo/.github/workflows/olympix.yml@main #secret
