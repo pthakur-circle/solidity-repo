@@ -30,7 +30,7 @@ jobs:
 
       - name: Call Olympix Scanner
         if: ${{ github.repository_owner == 'circlefin' }}
-        uses: circlefin/security-seceng-templates/.github/workflows/olympix_scan.yml@main
+        uses: circlefin/security-seceng-templates/.github/workflows/olympix_scan.yml@v1.12.0
         with:
           secrets: ${{ env.OLYMPIX_API_TOKEN }}
 
