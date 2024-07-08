@@ -1,7 +1,36 @@
-name: Test workflow
-'on':
-  workflow_dispatch: null
+name: "Olympix Integration"
+on:
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+  schedule:
+    - cron: '31 14 * * 1' # Every Monday 2:31PM UTC
+
 jobs:
-  call-workflow:
-    uses: pthakur-circle/integrate-repo/.github/workflows/olympix.yml@main
-    secrets: inherit
+  run_olympix:
+    runs-on: small-spot
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Circle runner
+        uses: circlefin/circle-runner-setup-action@v5.1.10
+        with: 
+          repository: ${{ github.repository }}
+          branch: ${{ github.ref }}
+          ecr_registries: ""
+          iam_role_arn: arn:aws:iam::171747205859:role/dev-olympix-ci
+
+      - name: Read Github Action Secrets from AWS
+        uses: aws-actions/aws-secretsmanager-get-secrets@v2.0.5
+        with:
+          secret-ids: | 
+            API_TOKEN,dev/olympix/key
+          parse-json-secrets: true
+
+      - name: Call Olympix Scanner
+        if: ${{ github.repository_owner == 'circlefin' }}
+        uses: circlefin/security-seceng-templates/.github/workflows/olympix_scan.yml@main
+        with:
+          secrets: ${{ env.OLYMPIX_API_TOKEN }}
+
