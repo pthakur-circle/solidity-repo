@@ -50,6 +50,4 @@ jobs:
     uses: pthakur-circle/integrate-repo/.github/workflows/olympix.yml@main
     secrets:
       OLYMPIX_API_TOKEN: ${{ secrets.OLYMPIX_API_TOKEN }}
-
-      # secrets
       
