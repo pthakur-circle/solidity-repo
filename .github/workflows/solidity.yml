@@ -1,7 +1,7 @@
 name: "Olympix Integration"
 on:
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main" ]
   workflow_dispatch:
   schedule:
     - cron: '31 14 * * 1' # Every Monday 2:31PM UTC
