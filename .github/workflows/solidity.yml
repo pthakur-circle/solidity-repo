@@ -1,3 +1,41 @@
+# name: "Olympix Integration"
+# on:
+#   push:
+#     branches: [ "main" ]
+#   pull_request:
+#     branches: [ "main" ]
+#   workflow_dispatch:
+#   schedule:
+#     - cron: '31 14 * * 1' # Every Monday 2:31PM UTC
+
+# jobs:
+#   get_secrets:
+#     runs-on: small-spot
+#     steps:
+#       - uses: actions/checkout@v3
+      
+#       - name: Set up Circle runner
+#         uses: circlefin/circle-runner-setup-action@v5.1.10
+#         with: 
+#           repository: ${{ github.repository }}
+#           branch: ${{ github.ref }}
+#           ecr_registries: ""
+#           iam_role_arn: arn:aws:iam::171747205859:role/dev-olympix-ci
+
+#       - name: Read Github Action Secrets from AWS
+#         uses: aws-actions/aws-secretsmanager-get-secrets@v2.0.5
+#         with:
+#           secret-ids: | 
+#             API_TOKEN,dev/olympix/key
+#           parse-json-secrets: true
+
+#   run_olympix: 
+#     needs: get_secrets 
+#     uses: circlefin/security-seceng-templates/.github/workflows/olympix_scan.yml@v1
+#     secrets: 
+#       OLYMPIX_API_TOKEN: ${{ needs.get_secrets.outputs.API_TOKEN }}
+
+
 name: "Olympix Integration"
 on:
   push:
@@ -5,32 +43,8 @@ on:
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
-  schedule:
-    - cron: '31 14 * * 1' # Every Monday 2:31PM UTC
+  
 
 jobs:
-  get_secrets:
-    runs-on: small-spot
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Set up Circle runner
-        uses: circlefin/circle-runner-setup-action@v5.1.10
-        with: 
-          repository: ${{ github.repository }}
-          branch: ${{ github.ref }}
-          ecr_registries: ""
-          iam_role_arn: arn:aws:iam::171747205859:role/dev-olympix-ci
-
-      - name: Read Github Action Secrets from AWS
-        uses: aws-actions/aws-secretsmanager-get-secrets@v2.0.5
-        with:
-          secret-ids: | 
-            API_TOKEN,dev/olympix/key
-          parse-json-secrets: true
-
-  run_olympix: 
-    needs: get_secrets 
+  call-workflow:
     uses: circlefin/security-seceng-templates/.github/workflows/olympix_scan.yml@v1
-    secrets: 
-      OLYMPIX_API_TOKEN: ${{ needs.get_secrets.outputs.API_TOKEN }}
