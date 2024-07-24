@@ -13,7 +13,7 @@ contract ERC20 {
 }
 
 contract RaceCondition{
-    address private owner;
+    address private owner;a
     uint public price;
     ERC20 token;
 
