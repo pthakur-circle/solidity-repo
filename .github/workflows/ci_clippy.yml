@@ -1,0 +1,11 @@
+name: "Clippy Integration"
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  call-workflow:
+    uses: pthakur-circle/integrate-repo/.github/workflows/clippy.yml@main
