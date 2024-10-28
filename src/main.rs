@@ -88,13 +88,31 @@ fn main() {
     let value: Option<i32> = None;
     let x = value.unwrap();  // This will panic since value is None
     println!("Value: {}", x);
+
+    // Unused results from function calls
+    if let Err(err) = unused_function() {
+        eprintln!("Error occurred: {}", err);
+    }
+
+    // Reuse of mutable variables in closures
+    let mut closure_variable = 0;
+    let closure = || {
+        closure_variable += 1;  // Reusing mutable variable, can lead to bugs
+    };
+    closure();
+
+    // Calling unwrap on Option type without checking
+    let another_option: Option<i32> = Some(10);
+    let another_value = another_option.unwrap(); // May panic if `another_option` is None
+    println!("Another Value: {}", another_value);
 }
 
+// Function with no return value, just to showcase risky usage of unit value
 fn risky_function(_: ()) {
-    // Accepting unit value, which is generally not useful
     eprintln!("Function accepted a unit value."); // Demonstrating risk without significance
 }
 
+// Vulnerable to SQL injection
 fn query_user_by_username(username: &str) -> Result<()> {
     let conn = Connection::open("vulnerable.db")?;
     
@@ -105,10 +123,17 @@ fn query_user_by_username(username: &str) -> Result<()> {
     Ok(())
 }
 
+// Dummy error for improper handling
 fn cause_error() -> Result<(), String> {
-    Err("An unexpected error occurred".into())  // Dummy error for improper handling
+    Err("An unexpected error occurred".into())
 }
 
+// Lack of input validation
 fn process_input(input: &str) -> Result<i32, String> {
     input.parse::<i32>().map_err(|_| "Invalid input".to_string())  // Lack of input validation
+}
+
+// Function that returns an error but is not used
+fn unused_function() -> Result<(), String> {
+    Err("This function's result is unused".into())
 }
