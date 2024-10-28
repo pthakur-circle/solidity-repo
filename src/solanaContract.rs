@@ -1,54 +1,111 @@
-#![allow(unused)]
-use solana_program::{entrypoint, pubkey::Pubkey, program_error::ProgramError, account_info::{AccountInfo, next_account_info}};
-use std::str::FromStr;
+use anchor_lang::prelude::*;
 
-pub struct MySolanaContract;
+declare_id!("YourProgramIdHere");
 
-#[inline(always)]
-fn process_instruction(
-    program_id: &Pubkey,
-    accounts: &[AccountInfo],
-    _instruction_data: &[u8],
-) -> Result<(), ProgramError> {
-    let accounts_iter = &mut accounts.iter();
-    let account_one = next_account_info(accounts_iter)?;
-    
-    // Vulnerable to integer overflow
-    let mut counter: u64 = 0; // No checks on counter increment
-    for _ in 0..10 {
-        counter += 1; // Potential overflow if this value were too high
+#[program]
+pub mod vulnerable_contract {
+    use super::*;
+
+    // An arbitrary data structure for holding user balances.
+    #[derive(Accounts)]
+    pub struct Initialize<'info> {
+        #[account(init, payer = user, space = 8 + 64)]
+        pub user_account: Account<'info, UserAccount>,
+        #[account(mut)]
+        pub user: Signer<'info>,
+        pub system_program: Program<'info, System>,
     }
 
-    // Improper error handling that could leak sensitive state
-    if counter > 10 {
-        return Err(ProgramError::InvalidInstructionData);
+    #[account]
+    pub struct UserAccount {
+        pub balance: u64,
+        pub user_name: String,
     }
 
-    // SQL injection-like vulnerability in a hypothetical database interaction
-    let input = "user_input'; --"; // Malicious input simulating a SQL injection scenario
-    let query = format!("SELECT * FROM users WHERE username = '{}'", input);  // Dangerous query construction
+    pub fn initialize(ctx: Context<Initialize>, user_name: String) -> ProgramResult {
+        let user_account = &mut ctx.accounts.user_account;
 
-    // Use of unit type incorrectly; might lead to confusion
-    let some_unit_value = ();
-    risky_function(some_unit_value);
+        // Allowing unvalidated user input (potential buffer overflow).
+        user_account.user_name = user_name.clone(); // Vulnerable: length restrictions not enforced.
 
-    // Calling unwrap directly causing panic in case of None
-    let option_val: Option<u32> = None;
-    println!("Your value is: {}", option_val.unwrap()); // Panic if None
+        // This could lead to overflow if not checked.
+        user_account.balance = 0;
 
-    // Inefficient use of mutable variables without need
-    let mut accumulated_value = 0;
-    for _ in 0..100 {
-        accumulated_value += 1; // Redundant logic that can be optimized
+        Ok(())
     }
 
+    #[access_control(validate_balance(&ctx))]
+    pub fn deposit(ctx: Context<Deposit>, amount: u64) -> ProgramResult {
+        let user_account = &mut ctx.accounts.user_account;
+
+        // Inefficient and unnecessary condition, this is bad logic
+        // because if balance is already at the max, we should halt further deposit.
+        if user_account.balance + amount > u64::MAX {
+            user_account.balance = 0; // Arbitrary reset on overflow.
+        } else {
+            user_account.balance += amount;
+        }
+
+        // Intentionally not logging this, exposing a risk as we might want/need more oversight:
+        // msg!("User {} deposited amount {}", user_account.user_name, amount);
+
+        Ok(())
+    }
+
+    pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> ProgramResult {
+        let user_account = &mut ctx.accounts.user_account;
+
+        // Weak password or critical information exposure
+        if (amount > user_account.balance) {
+            return Err(ProgramError::InsufficientFunds);
+        }
+
+        user_account.balance -= amount;
+
+        // Not properly checking conditions or handling potential errors.
+        // Using `unwrap()` which can panic! This is a bad practice.
+        let _ = user_account.user_name.len(); // Example of unhandled result
+
+        Ok(())
+    }
+
+    pub fn update_username(ctx: Context<UpdateUsername>, new_username: String) -> ProgramResult {
+        // Potentially allow empty usernames to be set
+        let user_account = &mut ctx.accounts.user_account;
+
+        // Validate new_username length for potential abuse (hence vulnerability)
+        if new_username.is_empty() {
+            return Err(ProgramError::InvalidArgument); // Not enforcing strong constraints for usernames
+        }
+
+        user_account.user_name = new_username;
+
+        Ok(())
+    }
+}
+
+#[derive(Accounts)]
+pub struct Deposit<'info> {
+    #[account(mut)]
+    pub user_account: Account<'info, UserAccount>,
+}
+
+#[derive(Accounts)]
+pub struct Withdraw<'info> {
+    #[account(mut)]
+    pub user_account: Account<'info, UserAccount>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateUsername<'info> {
+    #[account(mut)]
+    pub user_account: Account<'info, UserAccount>,
+}
+
+/// Example function to validate balance for Access Control
+fn validate_balance(ctx: &Context<Deposit>) -> Result<()> {
+    if ctx.accounts.user_account.balance <= 100 {
+        return Err(ProgramError::InsufficientFunds);
+    }
     Ok(())
 }
-
-// Function accepting unit type which seems unnecessary
-fn risky_function(_: ()) {
-    println!("Accepted a unit value.");
-}
-
-// This entrypoint will facilitate the smart contract execution
-entrypoint!(process_instruction);
