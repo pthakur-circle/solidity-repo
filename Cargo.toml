@@ -4,7 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tonic = "0.8" 
-ouch = "0.3.0" 
-rusqlite = "0.25.1"   
-rand = "0.8"  
+rusqlite = "0.24.2"   
